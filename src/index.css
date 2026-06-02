@@ -1,0 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  /* ── Brand palette ───────────────────────────────────── */
+  --col-earth:    #2D4A1E;
+  --col-leaf:     #4A7C2F;
+  --col-sprout:   #7BB84A;
+  --col-soil:     #8B5E3C;
+  --col-harvest:  #E8A020;
+  --col-sky:      #E8F4F0;
+  --col-chalk:    #F7F4EE;
+  --col-ink:      #1A2410;
+  --col-muted:    #6B7660;
+  --col-border:   #D4DCC8;
+  --col-white:    #FFFFFF;
+
+  /* ── Role colours ────────────────────────────────────── */
+  --col-farmer:   #4A7C2F;
+  --col-investor: #1A4A6B;
+  --col-admin:    #5C2D8B;
+  --col-consumer: #8B3A2F;
+
+  /* ── Semantic colours ────────────────────────────────── */
+  --col-success:  #2E7D32;
+  --col-warning:  #E8A020;
+  --col-danger:   #C0392B;
+  --col-info:     #1565C0;
+
+  /* ── Alias tokens (used throughout components) ───────── */
+  --col-primary:        var(--col-leaf);
+  --col-primary-dark:   var(--col-earth);
+  --col-primary-light:  var(--col-sprout);
+  --col-accent:         var(--col-harvest);
+
+  --col-bg:             var(--col-chalk);
+  --col-surface:        var(--col-white);
+  --col-surface-raised: var(--col-white);
+
+  --col-text:           var(--col-ink);
+  --col-text-muted:     var(--col-muted);
+  --col-text-on-primary: var(--col-white);  /* white text on green backgrounds */
+  --col-text-inverse:   var(--col-white);
+
+  --col-divider:        var(--col-border);
+  --col-input-bg:       var(--col-white);
+  --col-input-border:   var(--col-border);
+  --col-input-focus:    var(--col-leaf);
+  --col-placeholder:    var(--col-muted);
+
+  /* ── Sidebar-specific (ensures legibility on dark green) */
+  --col-sidebar-bg:     var(--col-earth);
+  --col-sidebar-text:   var(--col-white);
+  --col-sidebar-muted:  rgba(255,255,255,0.60);
+  --col-sidebar-hover:  rgba(255,255,255,0.10);
+  --col-sidebar-active: var(--col-leaf);
+  --col-sidebar-border: rgba(255,255,255,0.12);
+  --col-sidebar-icon:   rgba(255,255,255,0.80);
+
+  /* ── Spacing ─────────────────────────────────────────── */
+  --sp-xs:  4px;
+  --sp-sm:  8px;
+  --sp-md:  16px;
+  --sp-lg:  24px;
+  --sp-xl:  40px;
+  --sp-2xl: 64px;
+
+  /* ── Radius aliases ──────────────────────────────────── */
+  --r-sm:   6px;
+  --r-md:   12px;
+  --r-lg:   20px;
+  --r-pill: 999px;
+
+  /* Component-level radius aliases */
+  --radius-sm:   var(--r-sm);
+  --radius-md:   var(--r-md);
+  --radius-lg:   var(--r-lg);
+  --radius-pill: var(--r-pill);
+
+  /* ── Shadows ─────────────────────────────────────────── */
+  --shadow-sm: 0 1px 3px rgba(26,36,16,0.08), 0 1px 2px rgba(26,36,16,0.04);
+  --shadow-md: 0 4px 12px rgba(26,36,16,0.10), 0 2px 6px rgba(26,36,16,0.06);
+  --shadow-lg: 0 10px 32px rgba(26,36,16,0.12), 0 4px 12px rgba(26,36,16,0.06);
+
+  /* ── Typography ──────────────────────────────────────── */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body:    'DM Sans', system-ui, sans-serif;
+
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.25rem;
+  --text-2xl:  1.5rem;
+  --text-3xl:  1.875rem;
+
+  /* ── Transitions ─────────────────────────────────────── */
+  --transition-fast:   150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow:   400ms ease;
+}
+
+/* ── Reset ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+body {
+  font-family: var(--font-body);
+  background: var(--col-bg);
+  color: var(--col-text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; border: none; background: none; font-family: inherit; }
+input, select, textarea { font-family: inherit; }
+
+/* ── Scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--col-border); border-radius: 3px; }
+
+/* ── Utilities ─────────────────────────────────────────── */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border-width: 0;
+}
+
+/* ── Animations ────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fadeIn 0.3s ease forwards; }

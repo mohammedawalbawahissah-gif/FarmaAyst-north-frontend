@@ -1,0 +1,14 @@
+.investor-grid-main { display:grid; grid-template-columns:1fr 340px; gap:var(--sp-lg); }
+@media(max-width:860px){ .investor-grid-main { grid-template-columns:1fr; } }
+
+.farmer-match-card { display:flex; align-items:center; gap:var(--sp-md); padding:var(--sp-sm) var(--sp-md); border:1px solid var(--col-border); border-radius:var(--radius-sm); margin-bottom:var(--sp-sm); background:var(--col-bg); }
+.farmer-match-card__avatar { width:36px; height:36px; border-radius:50%; background:var(--col-primary); color:#fff; font-size:16px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.farmer-match-card__info   { flex:1; min-width:0; }
+.farmer-match-card__name   { font-size:13px; font-weight:600; display:block; }
+.farmer-match-card__meta   { font-size:12px; color:var(--col-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
+.farmer-match-card__ask    { display:flex; flex-direction:column; align-items:flex-end; flex-shrink:0; font-size:12px; color:var(--col-muted); }
+.farmer-match-card__ask strong { font-size:14px; color:var(--col-text); }
+
+.inv-type-bar__item  { display:flex; align-items:center; gap:var(--sp-sm); }
+.inv-type-bar__track { flex:1; background:var(--col-border); border-radius:4px; height:8px; overflow:hidden; }
+.inv-type-bar__fill  { height:8px; border-radius:4px; transition:width .4s ease; }

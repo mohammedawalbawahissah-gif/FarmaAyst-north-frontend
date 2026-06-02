@@ -1,0 +1,312 @@
+import { useState } from 'react';
+import { PageHeader, Card, Button, Badge } from '../../components/ui';
+import { useAsync } from '../../lib/hooks/useAsync';
+import { creditService } from '../../lib/services/credit';
+import { farmsService } from '../../lib/services/farms';
+import type { CreditType } from '../../types';
+import './farmer.css';
+
+type Step = 1 | 2 | 3 | 4;
+
+const CREDIT_TYPES: { value: CreditType; label: string; emoji: string; desc: string }[] = [
+  { value: 'funding',  label: 'Funding',     emoji: '💵', desc: 'Direct capital for startup, flock acquisition, or equipment' },
+  { value: 'inputs',   label: 'Farm Inputs', emoji: '🌾', desc: 'Feed, vaccines, medications, and housing materials in-kind' },
+  { value: 'training', label: 'Training',    emoji: '📚', desc: 'Enrolment in a structured training programme — free' },
+];
+const DOC_TYPES = [
+  { value: 'ghana_card',    label: 'Ghana Card' },
+  { value: 'farm_cert',     label: 'Farm Certificate' },
+  { value: 'farm_photo',    label: 'Farm Photo' },
+  { value: 'season_record', label: 'Season Record' },
+  { value: 'other',         label: 'Other Document' },
+];
+
+export default function CreditApplication() {
+  const farms = useAsync(() => farmsService.list(), []);
+  const apps  = useAsync(() => creditService.listApps(), []);
+
+  const [step, setStep]               = useState<Step>(1);
+  const [creditType, setCreditType]   = useState<CreditType | ''>('');
+  const [farmId, setFarmId]           = useState('');
+  const [amount, setAmount]           = useState('');
+  const [months, setMonths]           = useState('');
+  const [purpose, setPurpose]         = useState('');
+  const [inputDetails, setInputDetails] = useState('');
+  const [docType, setDocType]         = useState('ghana_card');
+  const [docFile, setDocFile]         = useState<File | null>(null);
+  const [saving, setSaving]           = useState(false);
+  const [error, setError]             = useState('');
+  const [draftId, setDraftId]         = useState('');
+  const [submitted, setSubmitted]     = useState(false);
+
+  const saveDraft = async () => {
+    if (!creditType) return;
+    setSaving(true); setError('');
+    try {
+      const payload = {
+        credit_type: creditType,
+        purpose,
+        ...(farmId && { farm: farmId }),
+        ...(amount && { amount_requested: parseFloat(amount) }),
+        ...(months && { repayment_period_months: parseInt(months) }),
+        ...(creditType === 'inputs' && { input_details: inputDetails }),
+      };
+      let app;
+      if (draftId) {
+        app = await creditService.updateApp(draftId, payload);
+      } else {
+        app = await creditService.createApp({ credit_type: creditType, purpose, ...payload });
+        setDraftId(app.id);
+      }
+      return app;
+    } catch {
+      setError('Could not save draft. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleNext = async () => {
+    if (step === 2) { await saveDraft(); }
+    setStep(s => (s + 1) as Step);
+  };
+
+  const handleUpload = async () => {
+    if (!docFile || !draftId) return;
+    setSaving(true); setError('');
+    try {
+      await creditService.uploadDoc(draftId, docFile, docType);
+      setStep(4);
+    } catch {
+      setError('Document upload failed. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!draftId) return;
+    setSaving(true); setError('');
+    try {
+      await creditService.submitApp(draftId);
+      setSubmitted(true);
+      apps.refetch();
+    } catch {
+      setError('Submission failed. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (submitted) {
+    return (
+      <div>
+        <PageHeader title="Credit Application" subtitle="Apply for funding, farm inputs, or training enrolment." />
+        <Card style={{ maxWidth: 540, margin: '3rem auto', textAlign: 'center', padding: '2.5rem' }}>
+          <div style={{ fontSize: 48, marginBottom: '1rem' }}>🎉</div>
+          <h2 style={{ marginBottom: '0.5rem' }}>Application Submitted!</h2>
+          <p style={{ color: 'var(--col-muted)', marginBottom: '1.5rem' }}>
+            Your application has been submitted and is now under review by the FarmAsyst North team.
+            You'll be notified when your status changes.
+          </p>
+          <Button onClick={() => { setSubmitted(false); setStep(1); setCreditType(''); setDraftId(''); setAmount(''); setMonths(''); setPurpose(''); setDocFile(null); }}>
+            New Application
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <PageHeader title="Credit Application" subtitle="Apply for funding, farm inputs, or training enrolment." />
+
+      {/* Stepper */}
+      <div className="stepper">
+        {['Credit Type', 'Details', 'Documents', 'Review'].map((label, i) => (
+          <div key={label} className={`stepper__step ${step === i + 1 ? 'stepper__step--active' : step > i + 1 ? 'stepper__step--done' : ''}`}>
+            <div className="stepper__dot">{step > i + 1 ? '✓' : i + 1}</div>
+            <span>{label}</span>
+          </div>
+        ))}
+      </div>
+
+      <Card style={{ maxWidth: 620, margin: '0 auto' }}>
+        {error && <p className="form-error">{error}</p>}
+
+        {/* Step 1 — Credit type */}
+        {step === 1 && (
+          <div className="app-step">
+            <h3>What type of support are you applying for?</h3>
+            <div className="credit-type-grid">
+              {CREDIT_TYPES.map(t => (
+                <button
+                  key={t.value}
+                  className={`credit-type-card ${creditType === t.value ? 'credit-type-card--selected' : ''}`}
+                  onClick={() => setCreditType(t.value)}
+                >
+                  <span className="credit-type-card__emoji">{t.emoji}</span>
+                  <strong>{t.label}</strong>
+                  <span className="credit-type-card__desc">{t.desc}</span>
+                </button>
+              ))}
+            </div>
+            <div className="step-actions">
+              <Button disabled={!creditType} onClick={() => setStep(2)}>Continue →</Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2 — Details */}
+        {step === 2 && (
+          <div className="app-step">
+            <h3>Application details</h3>
+
+            {farms.data && farms.data.results.length > 0 && (
+              <div className="form-field">
+                <label>Select farm (optional)</label>
+                <select value={farmId} onChange={e => setFarmId(e.target.value)}>
+                  <option value="">— No specific farm —</option>
+                  {farms.data.results.map(f => (
+                    <option key={f.id} value={f.id}>{f.name} · {f.district}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {creditType !== 'training' && (
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Amount requested (GHS)</label>
+                  <input type="number" min="1" placeholder="e.g. 5000" value={amount} onChange={e => setAmount(e.target.value)} />
+                </div>
+                <div className="form-field">
+                  <label>Repayment period (months)</label>
+                  <input type="number" min="1" max="36" placeholder="e.g. 12" value={months} onChange={e => setMonths(e.target.value)} />
+                </div>
+              </div>
+            )}
+
+            <div className="form-field">
+              <label>Purpose <span className="required">*</span></label>
+              <textarea
+                rows={4}
+                placeholder="Describe what you will use this support for and how it will benefit your farm..."
+                value={purpose}
+                onChange={e => setPurpose(e.target.value)}
+              />
+            </div>
+
+            {creditType === 'inputs' && (
+              <div className="form-field">
+                <label>Input details</label>
+                <textarea
+                  rows={3}
+                  placeholder="List the specific feeds, medications, or materials you need..."
+                  value={inputDetails}
+                  onChange={e => setInputDetails(e.target.value)}
+                />
+              </div>
+            )}
+
+            <div className="step-actions">
+              <Button variant="secondary" onClick={() => setStep(1)}>← Back</Button>
+              <Button disabled={!purpose || saving} onClick={handleNext}>
+                {saving ? 'Saving…' : 'Continue →'}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3 — Documents */}
+        {step === 3 && (
+          <div className="app-step">
+            <h3>Upload supporting documents</h3>
+            <p style={{ color: 'var(--col-muted)', marginBottom: '1.5rem', fontSize: 14 }}>
+              Documents help verify your application and increase approval chances. You can skip this step and upload later.
+            </p>
+
+            <div className="form-field">
+              <label>Document type</label>
+              <select value={docType} onChange={e => setDocType(e.target.value)}>
+                {DOC_TYPES.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+              </select>
+            </div>
+
+            <div className="form-field">
+              <label>Select file (PDF, JPG, PNG — max 10MB)</label>
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => setDocFile(e.target.files?.[0] ?? null)} />
+            </div>
+
+            <div className="step-actions">
+              <Button variant="secondary" onClick={() => setStep(2)}>← Back</Button>
+              <Button variant="ghost" onClick={() => setStep(4)}>Skip for now</Button>
+              <Button disabled={!docFile || saving} onClick={handleUpload}>
+                {saving ? 'Uploading…' : 'Upload & Continue →'}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4 — Review & submit */}
+        {step === 4 && (
+          <div className="app-step">
+            <h3>Review your application</h3>
+
+            <div className="review-block">
+              <div className="review-row"><span>Credit type</span><strong>{CREDIT_TYPES.find(t => t.value === creditType)?.label}</strong></div>
+              {amount && <div className="review-row"><span>Amount requested</span><strong>GHS {parseFloat(amount).toLocaleString()}</strong></div>}
+              {months && <div className="review-row"><span>Repayment period</span><strong>{months} months</strong></div>}
+              <div className="review-row"><span>Application status</span><Badge variant="neutral">Draft — will be submitted</Badge></div>
+            </div>
+
+            <div className="review-purpose">
+              <strong>Purpose</strong>
+              <p>{purpose}</p>
+            </div>
+
+            <p style={{ fontSize: 13, color: 'var(--col-muted)', marginTop: '1rem' }}>
+              By submitting, you confirm all provided information is accurate. FarmAsyst North will review your application and match you with a suitable investor.
+            </p>
+
+            <div className="step-actions">
+              <Button variant="secondary" onClick={() => setStep(3)}>← Back</Button>
+              <Button disabled={saving} onClick={handleSubmit}>
+                {saving ? 'Submitting…' : 'Submit Application ✓'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* Previous applications */}
+      {apps.data && apps.data.results.length > 0 && (
+        <div style={{ marginTop: '2.5rem' }}>
+          <h3 style={{ marginBottom: '1rem' }}>Your Previous Applications</h3>
+          <Card>
+            <table className="data-table">
+              <thead>
+                <tr><th>Reference</th><th>Type</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+              </thead>
+              <tbody>
+                {apps.data.results.slice(0, 8).map(app => (
+                  <tr key={app.id}>
+                    <td className="data-table__mono">{app.reference}</td>
+                    <td>{app.credit_type}</td>
+                    <td>{app.amount_requested ? `GHS ${parseFloat(app.amount_requested).toLocaleString()}` : 'Free'}</td>
+                    <td><Badge variant={
+                      ['approved','disbursed'].includes(app.status) ? 'success' :
+                      app.status === 'rejected' ? 'danger' :
+                      ['submitted','under_review','scored','matched'].includes(app.status) ? 'warning' : 'neutral'
+                    }>{app.status.replace('_', ' ')}</Badge></td>
+                    <td className="data-table__muted">{new Date(app.created_at).toLocaleDateString('en-GH')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}

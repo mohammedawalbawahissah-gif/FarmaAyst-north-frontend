@@ -1,0 +1,8 @@
+.admin-grid-main { display:grid; grid-template-columns:1fr 320px; gap:var(--sp-lg); }
+@media(max-width:860px){ .admin-grid-main { grid-template-columns:1fr; } }
+
+.health-row { display:flex; align-items:center; gap:var(--sp-sm); padding:9px 0; border-bottom:1px solid var(--col-border); font-size:13px; }
+.health-row:last-child { border-bottom:none; }
+.health-row svg { color:var(--col-muted); flex-shrink:0; }
+.health-row span { flex:1; color:var(--col-muted); }
+.health-row strong { color:var(--col-text); }

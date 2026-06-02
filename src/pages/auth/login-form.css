@@ -1,0 +1,10 @@
+/* Appended to Login.css */
+.login-form { display:flex; flex-direction:column; gap:var(--sp-md); width:100%; max-width:380px; margin:0 auto; }
+.login-form__field { display:flex; flex-direction:column; gap:6px; }
+.login-form__field label { font-size:13px; font-weight:500; color:var(--col-text); }
+.login-form__field input { padding:10px 14px; border:1px solid var(--col-border); border-radius:var(--radius-sm); font-size:14px; background:var(--col-surface); color:var(--col-text); transition:border-color .15s; }
+.login-form__field input:focus { outline:none; border-color:var(--col-primary); }
+.login-form__error  { font-size:13px; color:var(--col-danger); padding:8px 12px; background:#fef2f2; border-radius:var(--radius-sm); }
+.login-form__submit { padding:11px; background:var(--col-primary); color:#fff; border:none; border-radius:var(--radius-sm); font-size:14px; font-weight:600; cursor:pointer; transition:opacity .15s; }
+.login-form__submit:hover:not(:disabled) { opacity:.88; }
+.login-form__submit:disabled { opacity:.5; cursor:not-allowed; }

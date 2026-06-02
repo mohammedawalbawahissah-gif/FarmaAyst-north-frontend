@@ -1,0 +1,115 @@
+/* ── Page shell ─────────────────────────────────────────────────────────── */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  position: relative;
+  background: var(--col-bg);
+}
+.login-page__bg {
+  position: fixed; inset: 0; z-index: 0;
+  background: linear-gradient(135deg, #0f2f0f 0%, #1a4a1a 40%, #0d3320 100%);
+}
+.login-page__container {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 460px;
+  background: var(--col-bg);
+  border-radius: var(--radius-lg);
+  padding: 2rem 2rem 1.5rem;
+  box-shadow: 0 20px 60px rgba(0,0,0,.35);
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.login-page__header { text-align: center; margin-bottom: 1.5rem; }
+.login-page__logo-mark {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: var(--col-primary); color: #fff;
+  font-size: 24px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 0.6rem;
+}
+.login-page__title   { font-size: 22px; font-weight: 700; margin: 0 0 5px; color: var(--col-text); }
+.login-page__tagline { font-size: 13px; color: var(--col-muted); margin: 0; line-height: 1.5; }
+
+/* ── Mode toggle ────────────────────────────────────────────────────────── */
+.auth-toggle {
+  display: flex; border: 1px solid var(--col-border);
+  border-radius: var(--radius-sm); overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+.auth-toggle__btn {
+  flex: 1; padding: 9px; background: transparent;
+  border: none; font-size: 13px; font-weight: 500;
+  color: var(--col-muted); cursor: pointer; transition: all .15s;
+}
+.auth-toggle__btn--active {
+  background: var(--col-primary); color: #fff;
+}
+.auth-toggle__btn:not(.auth-toggle__btn--active):hover { background: var(--col-surface); }
+
+/* ── Form layout ────────────────────────────────────────────────────────── */
+.login-form { display: flex; flex-direction: column; gap: 1rem; }
+.login-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+@media(max-width: 400px) { .login-form__row { grid-template-columns: 1fr; } }
+
+/* ── Fields ─────────────────────────────────────────────────────────────── */
+.login-form__field { display: flex; flex-direction: column; gap: 5px; }
+.login-form__field label { font-size: 13px; font-weight: 500; color: var(--col-text); }
+.login-form__field input {
+  padding: 9px 12px;
+  border: 1px solid var(--col-border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  background: var(--col-surface);
+  color: var(--col-text);
+  transition: border-color .15s;
+  font-family: inherit;
+}
+.login-form__field input:focus { outline: none; border-color: var(--col-primary); }
+.login-form__field input:disabled { opacity: .6; }
+
+/* ── Role picker ────────────────────────────────────────────────────────── */
+.role-picker { display: flex; flex-direction: column; gap: 0.5rem; }
+.role-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--col-border);
+  border-radius: var(--radius-sm);
+  background: var(--col-bg);
+  cursor: pointer; text-align: left;
+  transition: border-color .15s, box-shadow .15s;
+}
+.role-card:hover { border-color: var(--col-primary); }
+.role-card--active {
+  border-color: var(--col-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--col-primary) 15%, transparent);
+}
+.role-card__label { font-size: 13px; font-weight: 600; color: var(--col-text); }
+.role-card__desc  { font-size: 12px; color: var(--col-muted); }
+
+/* ── Feedback ───────────────────────────────────────────────────────────── */
+.login-form__error   { font-size: 13px; color: var(--col-danger);  padding: 8px 12px; background: #fef2f2; border-radius: var(--radius-sm); }
+.login-form__success { font-size: 13px; color: var(--col-success); padding: 8px 12px; background: #f0fdf4; border-radius: var(--radius-sm); }
+
+/* ── Submit button ──────────────────────────────────────────────────────── */
+.login-form__submit {
+  padding: 11px; background: var(--col-primary); color: #fff;
+  border: none; border-radius: var(--radius-sm);
+  font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: opacity .15s; font-family: inherit;
+}
+.login-form__submit:hover:not(:disabled) { opacity: .88; }
+.login-form__submit:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── Switch link ────────────────────────────────────────────────────────── */
+.login-form__switch {
+  font-size: 12px; color: var(--col-muted);
+  text-align: center; margin: 0;
+}
+.login-form__switch button {
+  background: none; border: none; color: var(--col-primary);
+  font-size: 12px; font-weight: 600; cursor: pointer; padding: 0;
+  text-decoration: underline;
+}
