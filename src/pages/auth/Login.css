@@ -113,3 +113,24 @@
   font-size: 12px; font-weight: 600; cursor: pointer; padding: 0;
   text-decoration: underline;
 }
+
+/* ── Registration success screen ──────────────────────────────── */
+.reg-success-card {
+  background: var(--color-background-primary, #fff);
+  border: 0.5px solid var(--color-border-tertiary, #e5e3dd);
+  border-radius: var(--border-radius-lg, 12px);
+  padding: 32px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.reg-success-card__icon  { font-size: 48px; }
+.reg-success-card__title { font-size: 20px; font-weight: 700; color: var(--col-text); margin: 0; }
+.reg-success-card__body  { font-size: 14px; color: var(--col-muted); margin: 0; max-width: 340px; line-height: 1.6; }
+.reg-success-card__note  {
+  font-size: 13px; color: var(--col-primary, #4A7C2F);
+  background: #f0f7ec; border-radius: 8px;
+  padding: 10px 16px; margin: 0; max-width: 340px;
+}

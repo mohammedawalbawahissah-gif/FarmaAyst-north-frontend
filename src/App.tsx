@@ -11,12 +11,14 @@ import Repayments          from './pages/farmer/Repayments';
 import Training            from './pages/farmer/Training';
 import FarmerMarketplace   from './pages/farmer/Marketplace';
 import FarmerNotifications from './pages/farmer/Notifications';
-
 import FarmerContracts     from './pages/farmer/Contracts';
+import FarmerVetServices   from './pages/farmer/VetServices';
+import FarmerFarmInputs    from './pages/farmer/FarmInputs';
 
 import MonitoringDashboard     from './pages/monitoring/Dashboard';
 import MonitoringFarms         from './pages/monitoring/Farms';
 import MonitoringNotifications from './pages/monitoring/Notifications';
+import MonitoringFarmersList   from './pages/monitoring/FarmersList';
 import SubmitReport            from './pages/monitoring/SubmitReport';
 
 import InvestorDashboard     from './pages/investor/Dashboard';
@@ -28,22 +30,35 @@ import DueDiligence          from './pages/investor/Diligence';
 import ImpactReports         from './pages/investor/Impact';
 import InvestorNotifications from './pages/investor/Notifications';
 
-import AdminDashboard  from './pages/admin/Dashboard';
-import AdminFarms      from './pages/admin/Farms';
-import AdminUsers      from './pages/admin/Users';
-import AdminCredit     from './pages/admin/CreditWorkflow';
-import AdminMatching   from './pages/admin/Matching';
-import AdminTraining   from './pages/admin/Training';
-import AdminDisputes   from './pages/admin/Disputes';
-import AdminDisbursements from './pages/admin/Disbursements';
-import AdminAnalytics  from './pages/admin/Analytics';
-import AdminAudit      from './pages/admin/Audit';
-import AdminSettings   from './pages/admin/Settings';
+import AdminDashboard              from './pages/admin/Dashboard';
+import AdminFarms                  from './pages/admin/Farms';
+import AdminUsers                  from './pages/admin/Users';
+import AdminCredit                 from './pages/admin/CreditWorkflow';
+import AdminMatching               from './pages/admin/Matching';
+import AdminTraining               from './pages/admin/Training';
+import AdminDisputes               from './pages/admin/Disputes';
+import AdminDisbursements          from './pages/admin/Disbursements';
+import AdminAnalytics              from './pages/admin/Analytics';
+import AdminAudit                  from './pages/admin/Audit';
+import AdminMonitoring             from './pages/admin/Monitoring';
+import AdminSettings               from './pages/admin/Settings';
+import AdminCreditAlerts           from './pages/admin/CreditAlerts';
+import AdminVetManagement          from './pages/admin/VetManagement';
+import AdminInputDealerManagement  from './pages/admin/InputDealerManagement';
 
 import ConsumerMarketplace   from './pages/consumer/Marketplace';
 import Orders                from './pages/consumer/Orders';
 import Subscriptions         from './pages/consumer/Subscriptions';
 import ConsumerNotifications from './pages/consumer/Notifications';
+
+import VetDashboard     from './pages/vet/Dashboard';
+import VetBookings      from './pages/vet/Bookings';
+import VetServices      from './pages/vet/Services';
+import VetNotifications from './pages/vet/Notifications';
+
+import InputDealerDashboard     from './pages/input_dealer/Dashboard';
+import InputDealerListings      from './pages/input_dealer/Listings';
+import InputDealerNotifications from './pages/input_dealer/Notifications';
 
 function ProtectedRoutes() {
   const { user, loading } = useAuth();
@@ -65,45 +80,68 @@ function AppRoutes() {
       <Route path="/login" element={user ? <Navigate to={`/${user.role}`} replace /> : <Login />} />
 
       <Route element={<ProtectedRoutes />}>
-        <Route path="/farmer"                 element={<FarmerDashboard />} />
-        <Route path="/farmer/credit"          element={<CreditApplication />} />
-        <Route path="/farmer/farm"            element={<FarmManager />} />
-        <Route path="/farmer/repayments"      element={<Repayments />} />
-        <Route path="/farmer/contracts"       element={<FarmerContracts />} />
-        <Route path="/farmer/training"        element={<Training />} />
-        <Route path="/farmer/marketplace"     element={<FarmerMarketplace />} />
-        <Route path="/farmer/notifications"   element={<FarmerNotifications />} />
+        {/* Farmer */}
+        <Route path="/farmer"               element={<FarmerDashboard />} />
+        <Route path="/farmer/credit"        element={<CreditApplication />} />
+        <Route path="/farmer/farm"          element={<FarmManager />} />
+        <Route path="/farmer/repayments"    element={<Repayments />} />
+        <Route path="/farmer/contracts"     element={<FarmerContracts />} />
+        <Route path="/farmer/training"      element={<Training />} />
+        <Route path="/farmer/marketplace"   element={<FarmerMarketplace />} />
+        <Route path="/farmer/vet"           element={<FarmerVetServices />} />
+        <Route path="/farmer/inputs"        element={<FarmerFarmInputs />} />
+        <Route path="/farmer/notifications" element={<FarmerNotifications />} />
 
-        <Route path="/investor"               element={<InvestorDashboard />} />
-        <Route path="/investor/opportunities" element={<Opportunities />} />
-        <Route path="/investor/farmers"       element={<BrowseFarmers />} />
-        <Route path="/investor/portfolio"     element={<Portfolio />} />
-        <Route path="/investor/contracts"     element={<Contracts />} />
-        <Route path="/investor/diligence"     element={<DueDiligence />} />
-        <Route path="/investor/impact"        element={<ImpactReports />} />
-        <Route path="/investor/notifications" element={<InvestorNotifications />} />
+        {/* Investor */}
+        <Route path="/investor"                element={<InvestorDashboard />} />
+        <Route path="/investor/opportunities"  element={<Opportunities />} />
+        <Route path="/investor/farmers"        element={<BrowseFarmers />} />
+        <Route path="/investor/portfolio"      element={<Portfolio />} />
+        <Route path="/investor/contracts"      element={<Contracts />} />
+        <Route path="/investor/diligence"      element={<DueDiligence />} />
+        <Route path="/investor/impact"         element={<ImpactReports />} />
+        <Route path="/investor/notifications"  element={<InvestorNotifications />} />
 
-        <Route path="/admin"                  element={<AdminDashboard />} />
-        <Route path="/admin/farms"            element={<AdminFarms />} />
-        <Route path="/admin/users"            element={<AdminUsers />} />
-        <Route path="/admin/credit"           element={<AdminCredit />} />
-        <Route path="/admin/matching"         element={<AdminMatching />} />
-        <Route path="/admin/training"         element={<AdminTraining />} />
-        <Route path="/admin/disputes"         element={<AdminDisputes />} />
-        <Route path="/admin/disbursements"    element={<AdminDisbursements />} />
-        <Route path="/admin/analytics"        element={<AdminAnalytics />} />
-        <Route path="/admin/audit"            element={<AdminAudit />} />
-        <Route path="/admin/settings"         element={<AdminSettings />} />
+        {/* Admin */}
+        <Route path="/admin"                   element={<AdminDashboard />} />
+        <Route path="/admin/farms"             element={<AdminFarms />} />
+        <Route path="/admin/users"             element={<AdminUsers />} />
+        <Route path="/admin/credit"            element={<AdminCredit />} />
+        <Route path="/admin/credit-alerts"     element={<AdminCreditAlerts />} />
+        <Route path="/admin/matching"          element={<AdminMatching />} />
+        <Route path="/admin/training"          element={<AdminTraining />} />
+        <Route path="/admin/disputes"          element={<AdminDisputes />} />
+        <Route path="/admin/disbursements"     element={<AdminDisbursements />} />
+        <Route path="/admin/analytics"         element={<AdminAnalytics />} />
+        <Route path="/admin/audit"             element={<AdminAudit />} />
+        <Route path="/admin/monitoring"        element={<AdminMonitoring />} />
+        <Route path="/admin/vets"              element={<AdminVetManagement />} />
+        <Route path="/admin/input-dealers"     element={<AdminInputDealerManagement />} />
+        <Route path="/admin/settings"          element={<AdminSettings />} />
 
+        {/* Consumer */}
         <Route path="/consumer"               element={<ConsumerMarketplace />} />
         <Route path="/consumer/orders"        element={<Orders />} />
         <Route path="/consumer/subscriptions" element={<Subscriptions />} />
         <Route path="/consumer/notifications" element={<ConsumerNotifications />} />
 
-        <Route path="/monitoring"                element={<MonitoringDashboard />} />
-        <Route path="/monitoring/farms"          element={<MonitoringFarms />} />
-        <Route path="/monitoring/report"         element={<SubmitReport />} />
-        <Route path="/monitoring/notifications"  element={<MonitoringNotifications />} />
+        {/* Monitoring Officer */}
+        <Route path="/monitoring_officer"                element={<MonitoringDashboard />} />
+        <Route path="/monitoring_officer/farms"          element={<MonitoringFarms />} />
+        <Route path="/monitoring_officer/report"         element={<SubmitReport />} />
+        <Route path="/monitoring_officer/farmers"        element={<MonitoringFarmersList />} />
+        <Route path="/monitoring_officer/notifications"  element={<MonitoringNotifications />} />
+
+        {/* Vet */}
+        <Route path="/vet"                element={<VetDashboard />} />
+        <Route path="/vet/bookings"       element={<VetBookings />} />
+        <Route path="/vet/services"       element={<VetServices />} />
+        <Route path="/vet/notifications"  element={<VetNotifications />} />
+
+        {/* Input Dealer */}
+        <Route path="/input_dealer"                element={<InputDealerDashboard />} />
+        <Route path="/input_dealer/listings"       element={<InputDealerListings />} />
+        <Route path="/input_dealer/notifications"  element={<InputDealerNotifications />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />

@@ -4,7 +4,7 @@ import { useAsync } from '../../lib/hooks/useAsync';
 import { farmsService } from '../../lib/services/farms';
 import { adminService } from '../../lib/services/admin';
 import { toArray } from '../../lib/api';
-import { PlusCircle, Search } from 'lucide-react';
+import { PlusCircle, Search, Info } from 'lucide-react';
 import '../farmer/farmer.css';
 import './admin.css';
 
@@ -29,25 +29,58 @@ const REGIONS = [
   'Oti', 'Savannah', 'North East', 'Ahafo', 'Bono East', 'Western North',
 ];
 
+type FlockType =
+  | 'broilers' | 'layers' | 'guinea_fowl' | 'turkey' | 'duck' | 'geese' | 'ostrich'
+  | 'day_old_chicks' | 'hatchery' | 'poultry_and_hatchery' | 'meat_processing' | 'mixed';
+
 interface FarmForm {
-  owner:         string;
-  name:          string;
-  flock_type:    'broilers' | 'layers' | 'guinea_fowl' | 'turkey' | 'duck' | 'geese' | 'ostrich' | 'day_old_chicks' | 'hatchery' | 'poultry_and_hatchery' | 'meat_processing' | 'mixed';
-  flock_size:    string;
-  region:        string;
-  district:      string;
-  community:     string;
-  gps_address:   string;
-  farm_size_acres: string;
-  has_water_source: boolean;
-  has_electricity:  boolean;
+  owner:              string;
+  name:               string;
+  flock_type:         FlockType;
+  // Poultry / mixed
+  flock_size:         string;
+  // Hatchery-specific
+  incubator_capacity: string;
+  incubators_count:   string;
+  breeds_hatched:     string;
+  // Meat processing-specific
+  daily_capacity:     string;
+  cold_storage_capacity: string;
+  processing_equipment:  string;
+  // Common location
+  region:             string;
+  district:           string;
+  community:          string;
+  gps_address:        string;
+  farm_size_acres:    string;
+  has_water_source:   boolean;
+  has_electricity:    boolean;
 }
 
 const EMPTY_FORM: FarmForm = {
-  owner: '', name: '', flock_type: 'broilers', flock_size: '',
+  owner: '', name: '', flock_type: 'broilers',
+  flock_size: '',
+  incubator_capacity: '', incubators_count: '', breeds_hatched: '',
+  daily_capacity: '', cold_storage_capacity: '', processing_equipment: '',
   region: '', district: '', community: '', gps_address: '',
   farm_size_acres: '', has_water_source: false, has_electricity: false,
 };
+
+// Category helpers
+const isPoultry     = (t: FlockType) => ['broilers','layers','guinea_fowl','turkey','duck','geese','ostrich','mixed'].includes(t);
+const isHatchery    = (t: FlockType) => ['day_old_chicks','hatchery','poultry_and_hatchery'].includes(t);
+const isProcessing  = (t: FlockType) => t === 'meat_processing';
+const isCombo       = (t: FlockType) => t === 'poultry_and_hatchery';
+
+function SectionDivider({ label }: { label: string }) {
+  return (
+    <div style={{ borderTop: '1px solid var(--col-border)', paddingTop: 'var(--sp-md)', marginTop: 'var(--sp-sm)' }}>
+      <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--col-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 'var(--sp-sm)' }}>
+        {label}
+      </p>
+    </div>
+  );
+}
 
 export default function AdminFarms() {
   const farms   = useAsync(() => farmsService.list(), []);
@@ -81,14 +114,24 @@ export default function AdminFarms() {
     setShowModal(true);
   };
 
+  const ft = form.flock_type;
+  const showPoultryFields    = isPoultry(ft) || isCombo(ft);
+  const showHatcheryFields   = isHatchery(ft);
+  const showProcessingFields = isProcessing(ft);
+
+  // Validation: required fields depend on type
+  const isValid = (() => {
+    if (!form.owner || !form.name || !form.region || !form.district) return false;
+    if (showPoultryFields && !form.flock_size) return false;
+    if (showHatcheryFields && !isCombo(ft) && !form.incubator_capacity) return false;
+    return true;
+  })();
+
   const handleSubmit = async () => {
-    if (!form.owner || !form.name || !form.region || !form.district || !form.flock_size) {
-      setError('Please fill in all required fields.');
-      return;
-    }
+    if (!isValid) { setError('Please fill in all required fields.'); return; }
     setSaving(true); setError('');
     try {
-      await farmsService.createFarmForFarmer({
+      const payload: Record<string, unknown> = {
         owner:            form.owner,
         name:             form.name,
         flock_type:       form.flock_type,
@@ -100,16 +143,15 @@ export default function AdminFarms() {
         farm_size_acres:  form.farm_size_acres || null,
         has_water_source: form.has_water_source,
         has_electricity:  form.has_electricity,
-      } as never);
+      };
+      await farmsService.createFarmForFarmer(payload as never);
       setSuccess(`Farm "${form.name}" registered successfully.`);
       setShowModal(false);
       farms.refetch();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string; owner?: string[] } } })
         ?.response?.data;
-      setError(
-        msg?.owner?.[0] ?? msg?.detail ?? 'Failed to register farm. Please check the details.'
-      );
+      setError(msg?.owner?.[0] ?? msg?.detail ?? 'Failed to register farm. Please check the details.');
     } finally {
       setSaving(false);
     }
@@ -144,37 +186,28 @@ export default function AdminFarms() {
 
       {/* ── Stats row ────────────────────────────────────────────────────── */}
       <div className="grid-4" style={{ marginBottom: 'var(--sp-xl)' }}>
-        <div className="stat-card" style={{ background: '#fff', border: '1px solid var(--col-border)', borderRadius: 8, padding: 'var(--sp-md)' }}>
-          <div style={{ fontSize: 12, color: 'var(--col-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Farms</div>
-          <div style={{ fontSize: 28, fontWeight: 700, marginTop: 4 }}>{allFarms.length}</div>
-        </div>
-        <div className="stat-card" style={{ background: '#fff', border: '1px solid var(--col-border)', borderRadius: 8, padding: 'var(--sp-md)' }}>
-          <div style={{ fontSize: 12, color: 'var(--col-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Farms</div>
-          <div style={{ fontSize: 28, fontWeight: 700, marginTop: 4 }}>{allFarms.filter(f => f.is_active).length}</div>
-        </div>
-        <div className="stat-card" style={{ background: '#fff', border: '1px solid var(--col-border)', borderRadius: 8, padding: 'var(--sp-md)' }}>
-          <div style={{ fontSize: 12, color: 'var(--col-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Flock</div>
-          <div style={{ fontSize: 28, fontWeight: 700, marginTop: 4 }}>{allFarms.reduce((s, f) => s + f.flock_size, 0).toLocaleString()}</div>
-        </div>
-        <div className="stat-card" style={{ background: '#fff', border: '1px solid var(--col-border)', borderRadius: 8, padding: 'var(--sp-md)' }}>
-          <div style={{ fontSize: 12, color: 'var(--col-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Farmers with Farms</div>
-          <div style={{ fontSize: 28, fontWeight: 700, marginTop: 4 }}>
-            {new Set(allFarms.map(f => f.owner)).size}
+        {[
+          { label: 'Total Farms',        value: allFarms.length },
+          { label: 'Active Farms',       value: allFarms.filter(f => f.is_active).length },
+          { label: 'Total Flock',        value: allFarms.reduce((s, f) => s + f.flock_size, 0).toLocaleString() },
+          { label: 'Farmers with Farms', value: new Set(allFarms.map(f => f.owner)).size },
+        ].map(stat => (
+          <div key={stat.label} className="stat-card" style={{ background: '#fff', border: '1px solid var(--col-border)', borderRadius: 8, padding: 'var(--sp-md)' }}>
+            <div style={{ fontSize: 12, color: 'var(--col-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{stat.label}</div>
+            <div style={{ fontSize: 28, fontWeight: 700, marginTop: 4 }}>{stat.value}</div>
           </div>
-        </div>
+        ))}
       </div>
 
       {/* ── Registration Modal ───────────────────────────────────────────── */}
       {showModal && (
-        <Card style={{ maxWidth: 620, marginBottom: 'var(--sp-xl)', border: '2px solid var(--col-primary, #5C2D8B)' }}>
+        <Card style={{ maxWidth: 640, marginBottom: 'var(--sp-xl)', border: '2px solid var(--col-primary, #5C2D8B)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--sp-md)' }}>
             <h3 style={{ margin: 0 }}>Register New Farm</h3>
             <button
               onClick={() => setShowModal(false)}
               style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--col-muted)' }}
-            >
-              ✕
-            </button>
+            >✕</button>
           </div>
 
           {error && <p className="form-error" style={{ marginBottom: 'var(--sp-md)' }}>{error}</p>}
@@ -200,52 +233,128 @@ export default function AdminFarms() {
           {/* Farm name */}
           <div className="form-field">
             <label>Farm name <span className="required">*</span></label>
-            <input
-              type="text"
-              placeholder="e.g. Musah Poultry Farm"
-              value={form.name}
-              onChange={e => set('name', e.target.value)}
-            />
+            <input type="text" placeholder="e.g. Musah Poultry Farm" value={form.name} onChange={e => set('name', e.target.value)} />
           </div>
 
-          {/* Flock type + size */}
-          <div className="form-row">
-            <div className="form-field">
-              <label>Farm type <span className="required">*</span></label>
-              <select value={form.flock_type} onChange={e => set('flock_type', e.target.value as FarmForm['flock_type'])}>
-                <optgroup label="Poultry">
-                  <option value="broilers">Broilers</option>
-                  <option value="layers">Layers</option>
-                  <option value="guinea_fowl">Guinea Fowl</option>
-                  <option value="turkey">Turkey</option>
-                  <option value="duck">Duck</option>
-                  <option value="geese">Geese</option>
-                  <option value="ostrich">Ostrich</option>
-                  <option value="mixed">Mixed Poultry</option>
-                </optgroup>
-                <optgroup label="Hatchery">
-                  <option value="day_old_chicks">Day-Old Chicks</option>
-                  <option value="hatchery">Hatchery Only</option>
-                  <option value="poultry_and_hatchery">Poultry + Hatchery</option>
-                </optgroup>
-                <optgroup label="Processing">
-                  <option value="meat_processing">Meat Processing Farm</option>
-                </optgroup>
-              </select>
-            </div>
-            <div className="form-field">
-              <label>Current flock size <span className="required">*</span></label>
-              <input
-                type="number"
-                min="0"
-                placeholder="e.g. 1000"
-                value={form.flock_size}
-                onChange={e => set('flock_size', e.target.value)}
-              />
-            </div>
+          {/* Farm type — drives the rest of the form */}
+          <div className="form-field">
+            <label>Farm type <span className="required">*</span></label>
+            <select value={form.flock_type} onChange={e => set('flock_type', e.target.value as FlockType)}>
+              <optgroup label="Poultry">
+                <option value="broilers">Broilers</option>
+                <option value="layers">Layers</option>
+                <option value="guinea_fowl">Guinea Fowl</option>
+                <option value="turkey">Turkey</option>
+                <option value="duck">Duck</option>
+                <option value="geese">Geese</option>
+                <option value="ostrich">Ostrich</option>
+                <option value="mixed">Mixed Poultry</option>
+              </optgroup>
+              <optgroup label="Hatchery">
+                <option value="day_old_chicks">Day-Old Chicks</option>
+                <option value="hatchery">Hatchery Only</option>
+                <option value="poultry_and_hatchery">Poultry + Hatchery</option>
+              </optgroup>
+              <optgroup label="Processing">
+                <option value="meat_processing">Meat Processing Farm</option>
+              </optgroup>
+            </select>
           </div>
 
-          {/* Location */}
+          {/* ── Poultry-specific fields ────────────────────────────── */}
+          {showPoultryFields && (
+            <>
+              <SectionDivider label="Flock Details" />
+              <div className="form-field">
+                <label>Current flock size <span className="required">*</span></label>
+                <input
+                  type="number" min="0" placeholder="e.g. 1000"
+                  value={form.flock_size}
+                  onChange={e => set('flock_size', e.target.value)}
+                />
+                <span style={{ fontSize: 11, color: 'var(--col-muted)' }}>
+                  {ft === 'layers' ? 'Total laying hens currently on farm.' :
+                   ft === 'mixed'  ? 'Total birds across all species combined.' :
+                   'Total live birds currently on farm.'}
+                </span>
+              </div>
+            </>
+          )}
+
+          {/* ── Hatchery-specific fields ───────────────────────────── */}
+          {showHatcheryFields && (
+            <>
+              <SectionDivider label="Hatchery Details" />
+              {isCombo(ft) && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', background: '#f0f7ff', borderRadius: 8, padding: '8px 12px', marginBottom: 'var(--sp-md)', fontSize: 12, color: '#1A4A6B' }}>
+                  <Info size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+                  <span>This farm has both live birds and a hatchery. Fill in both sections below.</span>
+                </div>
+              )}
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Incubator capacity (eggs) <span className="required">*</span></label>
+                  <input
+                    type="number" min="0" placeholder="e.g. 5000"
+                    value={form.incubator_capacity}
+                    onChange={e => set('incubator_capacity', e.target.value)}
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Number of incubators</label>
+                  <input
+                    type="number" min="1" placeholder="e.g. 2"
+                    value={form.incubators_count}
+                    onChange={e => set('incubators_count', e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="form-field">
+                <label>Breeds/species hatched</label>
+                <input
+                  type="text" placeholder="e.g. Broilers, Layers, Guinea Fowl"
+                  value={form.breeds_hatched}
+                  onChange={e => set('breeds_hatched', e.target.value)}
+                />
+              </div>
+            </>
+          )}
+
+          {/* ── Meat Processing-specific fields ───────────────────── */}
+          {showProcessingFields && (
+            <>
+              <SectionDivider label="Processing Facility Details" />
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Daily processing capacity (birds) <span className="required">*</span></label>
+                  <input
+                    type="number" min="0" placeholder="e.g. 500"
+                    value={form.daily_capacity}
+                    onChange={e => set('daily_capacity', e.target.value)}
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Cold storage capacity (units)</label>
+                  <input
+                    type="number" min="0" placeholder="e.g. 1000"
+                    value={form.cold_storage_capacity}
+                    onChange={e => set('cold_storage_capacity', e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="form-field">
+                <label>Key processing equipment</label>
+                <input
+                  type="text" placeholder="e.g. Scalder, plucker, evisceration table, blast freezer"
+                  value={form.processing_equipment}
+                  onChange={e => set('processing_equipment', e.target.value)}
+                />
+              </div>
+            </>
+          )}
+
+          {/* ── Location ──────────────────────────────────────────── */}
+          <SectionDivider label="Location" />
           <div className="form-row">
             <div className="form-field">
               <label>Region <span className="required">*</span></label>
@@ -256,74 +365,42 @@ export default function AdminFarms() {
             </div>
             <div className="form-field">
               <label>District <span className="required">*</span></label>
-              <input
-                type="text"
-                placeholder="e.g. Tamale Metro"
-                value={form.district}
-                onChange={e => set('district', e.target.value)}
-              />
+              <input type="text" placeholder="e.g. Tamale Metro" value={form.district} onChange={e => set('district', e.target.value)} />
             </div>
           </div>
 
           <div className="form-row">
             <div className="form-field">
               <label>Community</label>
-              <input
-                type="text"
-                placeholder="e.g. Lamashegu"
-                value={form.community}
-                onChange={e => set('community', e.target.value)}
-              />
+              <input type="text" placeholder="e.g. Lamashegu" value={form.community} onChange={e => set('community', e.target.value)} />
             </div>
             <div className="form-field">
               <label>GPS address</label>
-              <input
-                type="text"
-                placeholder="e.g. NR-0234-5671"
-                value={form.gps_address}
-                onChange={e => set('gps_address', e.target.value)}
-              />
+              <input type="text" placeholder="e.g. NR-0234-5671" value={form.gps_address} onChange={e => set('gps_address', e.target.value)} />
             </div>
           </div>
 
           <div className="form-field">
             <label>Farm size (acres)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.1"
-              placeholder="e.g. 2.5"
-              value={form.farm_size_acres}
-              onChange={e => set('farm_size_acres', e.target.value)}
-            />
+            <input type="number" min="0" step="0.1" placeholder="e.g. 2.5" value={form.farm_size_acres} onChange={e => set('farm_size_acres', e.target.value)} />
           </div>
 
-          {/* Utilities */}
+          {/* ── Utilities ──────────────────────────────────────────── */}
+          <SectionDivider label="Utilities" />
           <div style={{ display: 'flex', gap: 'var(--sp-lg)', marginBottom: 'var(--sp-md)' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
-              <input
-                type="checkbox"
-                checked={form.has_water_source}
-                onChange={e => set('has_water_source', e.target.checked)}
-              />
+              <input type="checkbox" checked={form.has_water_source} onChange={e => set('has_water_source', e.target.checked)} />
               Has water source
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
-              <input
-                type="checkbox"
-                checked={form.has_electricity}
-                onChange={e => set('has_electricity', e.target.checked)}
-              />
+              <input type="checkbox" checked={form.has_electricity} onChange={e => set('has_electricity', e.target.checked)} />
               Has electricity
             </label>
           </div>
 
           <div style={{ display: 'flex', gap: 'var(--sp-sm)', marginTop: 'var(--sp-md)' }}>
             <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
-            <Button
-              disabled={saving || !form.owner || !form.name || !form.region || !form.district || !form.flock_size}
-              onClick={handleSubmit}
-            >
+            <Button disabled={saving || !isValid} onClick={handleSubmit}>
               {saving ? 'Registering…' : 'Register Farm'}
             </Button>
           </div>
@@ -367,7 +444,7 @@ export default function AdminFarms() {
                     </td>
                     <td>
                       <Badge variant={FLOCK_BADGE[farm.flock_type] ?? 'neutral'}>
-                        {farm.flock_type}
+                        {farm.flock_type.replace(/_/g, ' ')}
                       </Badge>
                     </td>
                     <td><strong>{farm.flock_size.toLocaleString()}</strong></td>

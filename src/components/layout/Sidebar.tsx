@@ -3,7 +3,8 @@ import {
   LayoutDashboard, FileText, Tractor, BookOpen, ShoppingCart,
   Bell, Users, TrendingUp, FileCheck, BarChart3, Settings,
   Store, Package, Star, UserCheck, AlertCircle, Database,
-  Banknote, LogOut, ChevronLeft, ChevronRight, ClipboardList, MapPin
+  Banknote, LogOut, ChevronLeft, ChevronRight, ClipboardList,
+  MapPin, ShieldCheck, Stethoscope, Calendar, Pill, AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../../lib/auth-context';
 import type { UserRole } from '../../types';
@@ -12,49 +13,67 @@ import './Sidebar.css';
 
 const NAV_CONFIG: Record<UserRole, { label: string; icon: React.ElementType; path: string }[]> = {
   farmer: [
-    { label: 'Dashboard',       icon: LayoutDashboard, path: '/farmer' },
-    { label: 'Credit Apply',    icon: FileText,        path: '/farmer/credit' },
-    { label: 'My Contracts',    icon: FileCheck,       path: '/farmer/contracts' },
-    { label: 'Farm Manager',    icon: Tractor,         path: '/farmer/farm' },
-    { label: 'Repayments',      icon: TrendingUp,      path: '/farmer/repayments' },
-    { label: 'Training',        icon: BookOpen,        path: '/farmer/training' },
-    { label: 'Marketplace',     icon: ShoppingCart,    path: '/farmer/marketplace' },
-    { label: 'Notifications',   icon: Bell,            path: '/farmer/notifications' },
+    { label: 'Dashboard',     icon: LayoutDashboard, path: '/farmer' },
+    { label: 'Credit Apply',  icon: FileText,        path: '/farmer/credit' },
+    { label: 'My Contracts',  icon: FileCheck,       path: '/farmer/contracts' },
+    { label: 'Farm Manager',  icon: Tractor,         path: '/farmer/farm' },
+    { label: 'Repayments',    icon: TrendingUp,      path: '/farmer/repayments' },
+    { label: 'Training',      icon: BookOpen,        path: '/farmer/training' },
+    { label: 'Marketplace',   icon: ShoppingCart,    path: '/farmer/marketplace' },
+    { label: 'Vet Services',  icon: Stethoscope,     path: '/farmer/vet' },
+    { label: 'Farm Inputs',   icon: Pill,            path: '/farmer/inputs' },
+    { label: 'Notifications', icon: Bell,            path: '/farmer/notifications' },
   ],
   investor: [
-    { label: 'Dashboard',         icon: LayoutDashboard, path: '/investor' },
-    { label: 'Opportunities',     icon: Star,            path: '/investor/opportunities' },
-    { label: 'Browse Farmers',    icon: Users,           path: '/investor/farmers' },
-    { label: 'My Portfolio',      icon: TrendingUp,      path: '/investor/portfolio' },
-    { label: 'Contracts',         icon: FileCheck,       path: '/investor/contracts' },
-    { label: 'Due Diligence',     icon: FileText,        path: '/investor/diligence' },
-    { label: 'Impact Reports',    icon: BarChart3,       path: '/investor/impact' },
-    { label: 'Notifications',     icon: Bell,            path: '/investor/notifications' },
+    { label: 'Dashboard',       icon: LayoutDashboard, path: '/investor' },
+    { label: 'Opportunities',   icon: Star,            path: '/investor/opportunities' },
+    { label: 'Browse Farmers',  icon: Users,           path: '/investor/farmers' },
+    { label: 'My Portfolio',    icon: TrendingUp,      path: '/investor/portfolio' },
+    { label: 'Contracts',       icon: FileCheck,       path: '/investor/contracts' },
+    { label: 'Due Diligence',   icon: FileText,        path: '/investor/diligence' },
+    { label: 'Impact Reports',  icon: BarChart3,       path: '/investor/impact' },
+    { label: 'Notifications',   icon: Bell,            path: '/investor/notifications' },
   ],
   admin: [
     { label: 'Overview',        icon: LayoutDashboard, path: '/admin' },
     { label: 'Users',           icon: Users,           path: '/admin/users' },
     { label: 'Farm Registry',   icon: Tractor,         path: '/admin/farms' },
     { label: 'Credit Workflow', icon: FileCheck,       path: '/admin/credit' },
+    { label: 'Credit Alerts',   icon: AlertTriangle,   path: '/admin/credit-alerts' },
     { label: 'Farmer Matching', icon: UserCheck,       path: '/admin/matching' },
     { label: 'Training CMS',    icon: BookOpen,        path: '/admin/training' },
     { label: 'Disputes',        icon: AlertCircle,     path: '/admin/disputes' },
     { label: 'Disbursements',   icon: Banknote,        path: '/admin/disbursements' },
     { label: 'Analytics',       icon: BarChart3,       path: '/admin/analytics' },
     { label: 'Audit Logs',      icon: Database,        path: '/admin/audit' },
+    { label: 'Monitoring',      icon: ShieldCheck,     path: '/admin/monitoring' },
+    { label: 'Vet Services',    icon: Stethoscope,     path: '/admin/vets' },
+    { label: 'Input Dealers',   icon: Store,           path: '/admin/input-dealers' },
     { label: 'Settings',        icon: Settings,        path: '/admin/settings' },
   ],
   monitoring_officer: [
-    { label: 'Dashboard',       icon: LayoutDashboard, path: '/monitoring' },
-    { label: 'Submit Report',   icon: ClipboardList,   path: '/monitoring/report' },
-    { label: 'All Farms',       icon: MapPin,          path: '/monitoring/farms' },
-    { label: 'Notifications',   icon: Bell,            path: '/monitoring/notifications' },
+    { label: 'Dashboard',     icon: LayoutDashboard, path: '/monitoring_officer' },
+    { label: 'Submit Report', icon: ClipboardList,   path: '/monitoring_officer/report' },
+    { label: 'Farms',         icon: MapPin,          path: '/monitoring_officer/farms' },
+    { label: 'Farmers',       icon: Users,           path: '/monitoring_officer/farmers' },
+    { label: 'Notifications', icon: Bell,            path: '/monitoring_officer/notifications' },
   ],
   consumer: [
-    { label: 'Marketplace',     icon: Store,           path: '/consumer' },
-    { label: 'My Orders',       icon: Package,         path: '/consumer/orders' },
-    { label: 'Subscriptions',   icon: Star,            path: '/consumer/subscriptions' },
-    { label: 'Notifications',   icon: Bell,            path: '/consumer/notifications' },
+    { label: 'Marketplace',   icon: Store,    path: '/consumer' },
+    { label: 'My Orders',     icon: Package,  path: '/consumer/orders' },
+    { label: 'Subscriptions', icon: Star,     path: '/consumer/subscriptions' },
+    { label: 'Notifications', icon: Bell,     path: '/consumer/notifications' },
+  ],
+  vet: [
+    { label: 'Dashboard',     icon: LayoutDashboard, path: '/vet' },
+    { label: 'Bookings',      icon: Calendar,        path: '/vet/bookings' },
+    { label: 'My Services',   icon: Stethoscope,     path: '/vet/services' },
+    { label: 'Notifications', icon: Bell,            path: '/vet/notifications' },
+  ],
+  input_dealer: [
+    { label: 'Dashboard',     icon: LayoutDashboard, path: '/input_dealer' },
+    { label: 'My Listings',   icon: Package,         path: '/input_dealer/listings' },
+    { label: 'Notifications', icon: Bell,            path: '/input_dealer/notifications' },
   ],
 };
 
@@ -64,6 +83,8 @@ const ROLE_COLORS: Record<UserRole, string> = {
   admin:              '#5C2D8B',
   monitoring_officer: '#1A6B5A',
   consumer:           '#8B3A2F',
+  vet:                '#0D6E8E',
+  input_dealer:       '#B45309',
 };
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -72,24 +93,23 @@ const ROLE_LABELS: Record<UserRole, string> = {
   admin:              'Admin Panel',
   monitoring_officer: 'Monitoring Officer',
   consumer:           'Marketplace',
+  vet:                'Vet Portal',
+  input_dealer:       'Input Dealer',
 };
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
-
   if (!user) return null;
 
-  const navItems  = NAV_CONFIG[user.role];
-  const roleColor = ROLE_COLORS[user.role];
+  const navItems  = NAV_CONFIG[user.role] ?? [];
+  const roleColor = ROLE_COLORS[user.role] ?? '#4A7C2F';
 
   return (
-    <aside className={`sidebar ${collapsed ? 'sidebar--collapsed' : ''}`} style={{ '--role-color': roleColor } as React.CSSProperties}>
-      {/* Logo */}
+    <aside className={`sidebar ${collapsed ? 'sidebar--collapsed' : ''}`}
+      style={{ '--role-color': roleColor } as React.CSSProperties}>
       <div className="sidebar__logo">
-        <div className="sidebar__logo-mark">
-          <span>F</span>
-        </div>
+        <div className="sidebar__logo-mark"><span>F</span></div>
         {!collapsed && (
           <div className="sidebar__logo-text">
             <span className="sidebar__logo-name">FarmAsyst</span>
@@ -98,14 +118,10 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* Role badge */}
       {!collapsed && (
-        <div className="sidebar__role-badge">
-          {ROLE_LABELS[user.role]}
-        </div>
+        <div className="sidebar__role-badge">{ROLE_LABELS[user.role] ?? user.role}</div>
       )}
 
-      {/* Nav */}
       <nav className="sidebar__nav">
         {navItems.map((item) => (
           <NavLink
@@ -121,13 +137,16 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Footer */}
       <div className="sidebar__footer">
         {!collapsed && (
           <div className="sidebar__user">
-            <div className="sidebar__avatar">{(user.full_name ?? user.first_name ?? '?').charAt(0).toUpperCase()}</div>
+            <div className="sidebar__avatar">
+              {(user.full_name ?? user.first_name ?? '?').charAt(0).toUpperCase()}
+            </div>
             <div className="sidebar__user-info">
-              <span className="sidebar__user-name">{user.full_name ?? `${user.first_name} ${user.last_name}`}</span>
+              <span className="sidebar__user-name">
+                {user.full_name ?? `${user.first_name} ${user.last_name}`}
+              </span>
               <span className="sidebar__user-email">{user.email}</span>
             </div>
           </div>
@@ -137,7 +156,6 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Collapse toggle */}
       <button
         className="sidebar__collapse-btn"
         onClick={() => setCollapsed(!collapsed)}

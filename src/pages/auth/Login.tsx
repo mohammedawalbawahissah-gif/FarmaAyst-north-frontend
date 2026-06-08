@@ -1,17 +1,36 @@
-import { useState, useRef, type FormEvent } from 'react';
+import { useState, useCallback, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../lib/auth-context';
 import { authService } from '../../lib/services/auth';
 import './Login.css';
 
-type Mode = 'login' | 'register';
+type Mode = 'login' | 'register' | 'success';
 
-// Admin is intentionally excluded — admin accounts are created internally only
+// Monitoring officer and admin are excluded — created by admins only
 const ROLES = [
-  { value: 'farmer',   label: '🐔 Poultry Farmer',    desc: 'Apply for credit, manage farm, access training' },
-  { value: 'investor', label: '💼 Investor / Partner', desc: 'Fund farmers, track portfolio, view reports' },
-  { value: 'consumer', label: '🛒 Consumer / Buyer',   desc: 'Browse and order quality poultry produce' },
+  { value: 'farmer',       label: '🐔 Poultry Farmer',     desc: 'Apply for credit, manage farm, access training' },
+  { value: 'investor',     label: '💼 Investor / Partner', desc: 'Fund farmers, track portfolio, view reports' },
+  { value: 'consumer',     label: '🛒 Consumer / Buyer',   desc: 'Browse and order quality poultry produce' },
+  { value: 'vet',          label: '🩺 Veterinarian',       desc: 'Offer vet services to poultry farmers (admin approval required)' },
+  { value: 'input_dealer', label: '🏪 Farm Input Dealer',  desc: 'Sell feed, vaccines & equipment on the platform (admin approval required)' },
 ];
+
+function parseApiError(err: unknown): string {
+  const data = (err as { response?: { data?: Record<string, unknown> } })?.response?.data;
+  if (!data) return 'Something went wrong. Please try again.';
+  if (data['detail'])        return String(data['detail']);
+  if (data['non_field_errors']) {
+    const v = data['non_field_errors'];
+    return Array.isArray(v) ? String(v[0]) : String(v);
+  }
+  // email duplicate → "user with this email already exists."
+  if (data['email']) {
+    const v = data['email'];
+    return Array.isArray(v) ? String(v[0]) : String(v);
+  }
+  const first = Object.values(data)[0];
+  return Array.isArray(first) ? String(first[0]) : String(first ?? 'Registration failed.');
+}
 
 export default function Login() {
   const { login } = useAuth();
@@ -19,13 +38,13 @@ export default function Login() {
 
   const [mode, setMode] = useState<Mode>('login');
 
-  // ── Login state ───────────────────────────────────────────────
-  const [email,       setEmail]    = useState('');
-  const [password,    setPassword] = useState('');
-  const [loginError,  setLoginError]  = useState('');
-  const [loginBusy,   setLoginBusy]   = useState(false);
+  // ── Login ──────────────────────────────────────────────────────
+  const [email,      setEmail]     = useState('');
+  const [password,   setPassword]  = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [loginBusy,  setLoginBusy]  = useState(false);
 
-  // ── Register state ────────────────────────────────────────────
+  // ── Register ───────────────────────────────────────────────────
   const [firstName, setFirstName] = useState('');
   const [lastName,  setLastName]  = useState('');
   const [phone,     setPhone]     = useState('');
@@ -34,29 +53,18 @@ export default function Login() {
   const [regPass,   setRegPass]   = useState('');
   const [regPass2,  setRegPass2]  = useState('');
   const [regError,  setRegError]  = useState('');
-  const [regSuccess,setRegSuccess]= useState('');
   const [regBusy,   setRegBusy]   = useState(false);
-
-  const submitting = useRef(false);
-
-  // Reset everything on mount — guards against stale state from HMR or StrictMode
-  useState(() => {
-    submitting.current = false;
-  });
+  const [regDone,   setRegDone]   = useState<{ name: string; email: string } | null>(null);
 
   const switchMode = (m: Mode) => {
-    submitting.current = false;
-    setLoginBusy(false);
-    setRegBusy(false);
     setMode(m);
-    setLoginError(''); setRegError(''); setRegSuccess('');
+    setLoginError(''); setRegError('');
   };
 
-  // ── Login submit ──────────────────────────────────────────────
-  const handleLogin = async (e: FormEvent) => {
+  // ── Login submit ───────────────────────────────────────────────
+  const handleLogin = useCallback(async (e: FormEvent) => {
     e.preventDefault();
-    if (submitting.current) return;
-    submitting.current = true;
+    if (loginBusy) return;
     setLoginError('');
     setLoginBusy(true);
     try {
@@ -64,71 +72,89 @@ export default function Login() {
       navigate(`/${me.role}`);
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setLoginError(detail ?? 'Invalid email or password. Please try again.');
+      setLoginError(detail ?? 'Invalid email or password.');
+    } finally {
       setLoginBusy(false);
-      submitting.current = false;
     }
-  };
+  }, [loginBusy, email, password, login, navigate]);
 
-  // ── Register submit ───────────────────────────────────────────
-  const handleRegister = async (e: FormEvent) => {
+  // ── Register submit ────────────────────────────────────────────
+  const handleRegister = useCallback(async (e: FormEvent) => {
     e.preventDefault();
-    if (submitting.current) return;   // hard guard against double-fire
-    submitting.current = true;
+    if (regBusy) return;
 
-    setRegError(''); setRegSuccess('');
+    // Client-side validation first — avoids any network call on obvious errors
+    if (!firstName.trim() || !lastName.trim()) { setRegError('Please enter your full name.'); return; }
+    if (!regEmail.trim())  { setRegError('Please enter your email address.'); return; }
+    if (!phone.trim())     { setRegError('Please enter your phone number.'); return; }
+    if (regPass.length < 8) { setRegError('Password must be at least 8 characters.'); return; }
+    if (regPass !== regPass2) { setRegError('Passwords do not match.'); return; }
 
-    if (regPass !== regPass2) {
-      setRegError('Passwords do not match.');
-      submitting.current = false;
-      return;
-    }
-    if (regPass.length < 8) {
-      setRegError('Password must be at least 8 characters.');
-      submitting.current = false;
-      return;
-    }
-
+    setRegError('');
     setRegBusy(true);
+
     try {
       await authService.register({
-        email: regEmail, first_name: firstName, last_name: lastName,
-        phone, role, password: regPass, password2: regPass2,
+        email: regEmail.trim(),
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        phone: phone.trim(),
+        role,
+        password: regPass,
+        password2: regPass2,
       });
-      setRegSuccess(
-        'Account created! It is pending review by a FarmAsyst North administrator. ' +
-        'You will be able to log in once approved.'
-      );
-      setFirstName(''); setLastName(''); setPhone('');
-      setRegEmail(''); setRegPass(''); setRegPass2('');
-      setRole('farmer');
+      // Show the success screen instead of clearing and staying on the form
+      setRegDone({ name: firstName.trim(), email: regEmail.trim() });
+      setMode('success');
     } catch (err: unknown) {
-      const data = (err as { response?: { data?: Record<string, unknown> } })?.response?.data;
-      if (data) {
-        const nfe = data['non_field_errors'];
-        if (Array.isArray(nfe) && nfe.length) {
-          setRegError(String(nfe[0]));
-        } else if (data['detail']) {
-          setRegError(String(data['detail']));
-        } else {
-          const firstVal = Object.values(data)[0];
-          setRegError(Array.isArray(firstVal) ? String(firstVal[0]) : String(firstVal ?? 'Registration failed.'));
-        }
-      } else {
-        setRegError('Registration failed. Please try again.');
-      }
+      setRegError(parseApiError(err));
     } finally {
       setRegBusy(false);
-      submitting.current = false;
     }
-  };
+  }, [regBusy, firstName, lastName, regEmail, phone, role, regPass, regPass2]);
+
+  // ── Success screen ─────────────────────────────────────────────
+  if (mode === 'success' && regDone) {
+    return (
+      <div className="login-page">
+        <div className="login-page__bg" />
+        <div className="login-page__container">
+          <div className="login-page__header">
+            <div className="login-page__logo-mark">F</div>
+            <h1 className="login-page__title">FarmAsyst North</h1>
+          </div>
+          <div className="reg-success-card">
+            <div className="reg-success-card__icon">✅</div>
+            <h2 className="reg-success-card__title">Account request submitted!</h2>
+            <p className="reg-success-card__body">
+              Hi <strong>{regDone.name}</strong>, your account has been created and is now
+              <strong> pending verification</strong> by a FarmAsyst North administrator.
+            </p>
+            <p className="reg-success-card__body">
+              Once approved, you'll receive a notification and can sign in with{' '}
+              <strong>{regDone.email}</strong>.
+            </p>
+            <p className="reg-success-card__note">
+              📧 You'll be notified by email or SMS when your account is activated.
+            </p>
+            <button
+              className="login-form__submit"
+              style={{ marginTop: 16 }}
+              onClick={() => { setMode('login'); setRegDone(null); }}
+            >
+              Back to Sign in
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="login-page">
       <div className="login-page__bg" />
 
       <div className="login-page__container">
-        {/* Header */}
         <div className="login-page__header">
           <div className="login-page__logo-mark">F</div>
           <h1 className="login-page__title">FarmAsyst North</h1>
@@ -142,46 +168,34 @@ export default function Login() {
         <div className="auth-toggle">
           <button
             className={`auth-toggle__btn ${mode === 'login' ? 'auth-toggle__btn--active' : ''}`}
-            onClick={() => switchMode('login')}
-            type="button"
-          >
-            Sign in
-          </button>
+            onClick={() => switchMode('login')} type="button"
+          >Sign in</button>
           <button
             className={`auth-toggle__btn ${mode === 'register' ? 'auth-toggle__btn--active' : ''}`}
-            onClick={() => switchMode('register')}
-            type="button"
-          >
-            Create account
-          </button>
+            onClick={() => switchMode('register')} type="button"
+          >Create account</button>
         </div>
 
-        {/* ── LOGIN FORM ── */}
+        {/* ── LOGIN ── */}
         {mode === 'login' && (
           <form className="login-form" onSubmit={handleLogin} noValidate>
             <div className="login-form__field">
               <label htmlFor="email">Email address</label>
-              <input
-                id="email" type="email" autoComplete="email"
+              <input id="email" type="email" autoComplete="email"
                 placeholder="you@example.com"
                 value={email} onChange={e => setEmail(e.target.value)}
-                required disabled={loginBusy}
-              />
+                required disabled={loginBusy} />
             </div>
             <div className="login-form__field">
               <label htmlFor="password">Password</label>
-              <input
-                id="password" type="password" autoComplete="current-password"
+              <input id="password" type="password" autoComplete="current-password"
                 placeholder="Enter your password"
                 value={password} onChange={e => setPassword(e.target.value)}
-                required disabled={loginBusy}
-              />
+                required disabled={loginBusy} />
             </div>
             {loginError && <p className="login-form__error">{loginError}</p>}
-            <button
-              type="submit" className="login-form__submit"
-              disabled={loginBusy || !email || !password}
-            >
+            <button type="submit" className="login-form__submit"
+              disabled={loginBusy || !email || !password}>
               {loginBusy ? 'Signing in…' : 'Sign in'}
             </button>
             <p className="login-form__switch">
@@ -191,89 +205,85 @@ export default function Login() {
           </form>
         )}
 
-        {/* ── REGISTER FORM ── */}
+        {/* ── REGISTER ── */}
         {mode === 'register' && (
           <form className="login-form" onSubmit={handleRegister} noValidate>
 
-            {/* Role selector */}
             <div className="role-picker">
               {ROLES.map(r => (
-                <button
-                  key={r.value} type="button"
+                <button key={r.value} type="button"
                   className={`role-card ${role === r.value ? 'role-card--active' : ''}`}
-                  onClick={() => setRole(r.value)}
-                  disabled={regBusy}
-                >
+                  onClick={() => setRole(r.value)} disabled={regBusy}>
                   <span className="role-card__label">{r.label}</span>
                   <span className="role-card__desc">{r.desc}</span>
                 </button>
               ))}
             </div>
 
-            {/* Name row */}
             <div className="login-form__row">
               <div className="login-form__field">
                 <label htmlFor="firstName">First name</label>
-                <input
-                  id="firstName" type="text" placeholder="Kofi"
+                <input id="firstName" type="text" placeholder="Kofi"
                   value={firstName} onChange={e => setFirstName(e.target.value)}
-                  required disabled={regBusy}
-                />
+                  required disabled={regBusy} />
               </div>
               <div className="login-form__field">
                 <label htmlFor="lastName">Last name</label>
-                <input
-                  id="lastName" type="text" placeholder="Mensah"
+                <input id="lastName" type="text" placeholder="Mensah"
                   value={lastName} onChange={e => setLastName(e.target.value)}
-                  required disabled={regBusy}
-                />
+                  required disabled={regBusy} />
               </div>
             </div>
 
             <div className="login-form__field">
               <label htmlFor="regEmail">Email address</label>
-              <input
-                id="regEmail" type="email" placeholder="you@example.com"
+              <input id="regEmail" type="email" placeholder="you@example.com"
                 value={regEmail} onChange={e => setRegEmail(e.target.value)}
-                required disabled={regBusy}
-              />
+                required disabled={regBusy} />
             </div>
 
             <div className="login-form__field">
               <label htmlFor="phone">Phone number (MoMo)</label>
-              <input
-                id="phone" type="tel" placeholder="024XXXXXXX"
+              <input id="phone" type="tel" placeholder="024XXXXXXX"
                 value={phone} onChange={e => setPhone(e.target.value)}
-                required disabled={regBusy}
-              />
+                required disabled={regBusy} />
             </div>
 
             <div className="login-form__row">
               <div className="login-form__field">
                 <label htmlFor="regPass">Password</label>
-                <input
-                  id="regPass" type="password" placeholder="Min. 8 characters"
+                <input id="regPass" type="password" placeholder="Min. 8 characters"
                   value={regPass} onChange={e => setRegPass(e.target.value)}
-                  required disabled={regBusy}
-                />
+                  required disabled={regBusy} autoComplete="new-password" />
               </div>
               <div className="login-form__field">
                 <label htmlFor="regPass2">Confirm password</label>
-                <input
-                  id="regPass2" type="password" placeholder="Repeat password"
+                <input id="regPass2" type="password" placeholder="Repeat password"
                   value={regPass2} onChange={e => setRegPass2(e.target.value)}
-                  required disabled={regBusy}
-                />
+                  required disabled={regBusy} autoComplete="new-password" />
               </div>
             </div>
 
-            {regError   && <p className="login-form__error">{regError}</p>}
-            {regSuccess && <p className="login-form__success">{regSuccess}</p>}
+            {/* Password strength hint */}
+            {regPass.length > 0 && regPass.length < 8 && (
+              <p style={{ fontSize: 12, color: '#E8A020', margin: '-8px 0 4px' }}>
+                Password must be at least 8 characters
+              </p>
+            )}
+            {regPass.length >= 8 && regPass2.length > 0 && regPass !== regPass2 && (
+              <p style={{ fontSize: 12, color: '#c0392b', margin: '-8px 0 4px' }}>
+                Passwords do not match
+              </p>
+            )}
 
-            <button
-              type="submit" className="login-form__submit"
-              disabled={regBusy || !firstName || !lastName || !regEmail || !phone || !regPass || !regPass2}
-            >
+            {regError && <p className="login-form__error">{regError}</p>}
+
+            <button type="submit" className="login-form__submit"
+              disabled={
+                regBusy ||
+                !firstName || !lastName || !regEmail || !phone ||
+                regPass.length < 8 || regPass !== regPass2
+              }>
               {regBusy ? 'Creating account…' : 'Create account'}
             </button>
 

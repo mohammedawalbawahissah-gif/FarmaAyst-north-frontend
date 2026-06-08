@@ -1,1 +1,185 @@
-.consumer-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:var(--sp-md); }
+/* ── Grid ──────────────────────────────────────────────────────────── */
+.consumer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--sp-md);
+}
+
+/* ── Produce card ──────────────────────────────────────────────────── */
+.produce-card { display:flex; flex-direction:column; overflow:hidden; padding:0; }
+
+.produce-card__image {
+  width:100%; aspect-ratio:16/10; object-fit:cover;
+  background:var(--col-surface,#f4f3ef); display:block;
+}
+.produce-card__image-placeholder {
+  width:100%; aspect-ratio:16/10;
+  background:var(--col-surface,#f4f3ef);
+  display:flex; align-items:center; justify-content:center;
+  font-size:36px; color:var(--col-muted);
+}
+.produce-card__body { display:flex; flex-direction:column; gap:var(--sp-xs); padding:var(--sp-md); flex:1; }
+.produce-card__header { display:flex; justify-content:space-between; align-items:flex-start; }
+.produce-card__name  { font-size:15px; font-weight:600; color:var(--col-text); margin:2px 0; }
+.produce-card__farm  { font-size:13px; color:var(--col-muted); }
+.produce-card__price-row { display:flex; justify-content:space-between; align-items:flex-end; margin-top:var(--sp-xs); }
+.produce-card__price { font-size:20px; font-weight:700; color:var(--col-primary,#4A7C2F); }
+.produce-card__unit  { font-size:12px; color:var(--col-muted); }
+.produce-card__avail { font-size:12px; color:var(--col-muted); }
+.produce-card__desc  {
+  font-size:12px; color:var(--col-muted);
+  display:-webkit-box; -webkit-line-clamp:2;
+  -webkit-box-orient:vertical; overflow:hidden;
+}
+
+/* ── Modal overlay — fixed, full screen, above everything ──────────── */
+.order-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 9999;           /* above sidebar (z ~100) and everything else */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;        /* let the overlay itself scroll on tiny screens */
+}
+
+.order-modal {
+  background: var(--color-background-primary, #fff);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.22);
+  overflow: hidden;        /* children handle their own scroll */
+  margin: auto;            /* keeps it centred when overlay scrolls */
+}
+
+.order-modal__header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 20px;
+  border-bottom:0.5px solid var(--color-border-tertiary,#e5e3dd);
+  flex-shrink:0;
+}
+.order-modal__title { font-size:16px; font-weight:600; color:var(--col-text); }
+.order-modal__close {
+  background:none; border:none; cursor:pointer;
+  color:var(--col-muted); padding:4px;
+  display:flex; align-items:center;
+}
+
+/* scrollable body */
+.order-modal__body {
+  padding:20px;
+  display:flex; flex-direction:column; gap:16px;
+  overflow-y:auto;
+  flex:1;
+}
+
+.order-modal__footer {
+  display:flex; gap:8px;
+  padding:16px 20px;
+  border-top:0.5px solid var(--color-border-tertiary,#e5e3dd);
+  flex-shrink:0;
+}
+
+/* ── Produce summary strip ─────────────────────────────────────────── */
+.order-modal__produce {
+  display:flex; gap:12px; align-items:center;
+  background:var(--col-surface,#f8f7f4);
+  border-radius:8px; padding:10px 14px;
+}
+.order-modal__produce-img {
+  width:64px; height:48px; object-fit:cover; border-radius:6px;
+  background:var(--color-border-tertiary); flex-shrink:0;
+}
+.order-modal__produce-placeholder {
+  width:64px; height:48px; border-radius:6px;
+  background:var(--color-border-tertiary,#e5e3dd);
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; flex-shrink:0;
+}
+.order-modal__produce-info strong { font-size:14px; display:block; }
+.order-modal__produce-info span   { font-size:13px; color:var(--col-muted); }
+
+/* ── Toggle grids ──────────────────────────────────────────────────── */
+.delivery-toggle, .payment-toggle {
+  display:grid; grid-template-columns:1fr 1fr; gap:8px;
+}
+.toggle-option {
+  border:1.5px solid var(--color-border-secondary,#d0cec8);
+  border-radius:8px; padding:12px;
+  cursor:pointer; text-align:center;
+  transition:border-color .15s, background .15s;
+  background:var(--color-background-primary);
+}
+.toggle-option:hover { border-color:var(--col-primary,#4A7C2F); }
+.toggle-option--active {
+  border-color:var(--col-primary,#4A7C2F);
+  background:#f0f7ec;
+}
+.toggle-option--pay-active {
+  border-color:#E8A020;
+  background:#fdf6e3;
+}
+.toggle-option__icon  { font-size:22px; margin-bottom:4px; }
+.toggle-option__label { font-size:13px; font-weight:600; color:var(--col-text); }
+.toggle-option__sub   { font-size:11px; color:var(--col-muted); margin-top:2px; }
+
+/* ── MoMo / card payment panel ─────────────────────────────────────── */
+.payment-panel {
+  background: #fffdf5;
+  border:1.5px solid #E8A020;
+  border-radius:8px;
+  padding:16px;
+  display:flex; flex-direction:column; gap:12px;
+}
+.payment-panel__title {
+  font-size:13px; font-weight:600; color:#B37A00;
+  display:flex; align-items:center; gap:6px;
+}
+.momo-options { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.momo-option {
+  border:1.5px solid var(--color-border-secondary,#d0cec8);
+  border-radius:8px; padding:10px 6px; cursor:pointer;
+  text-align:center; background:#fff; transition:all .15s;
+}
+.momo-option:hover { border-color:#E8A020; }
+.momo-option--active { border-color:#E8A020; background:#FFF8E6; }
+.momo-option__logo { font-size:20px; margin-bottom:3px; }
+.momo-option__name { font-size:11px; font-weight:600; color:var(--col-text); }
+
+/* ── Order summary box ─────────────────────────────────────────────── */
+.order-summary {
+  background:var(--col-surface,#f8f7f4);
+  border-radius:8px; padding:14px;
+}
+.order-summary__row {
+  display:flex; justify-content:space-between;
+  font-size:13px; padding:3px 0; color:var(--col-muted);
+}
+.order-summary__total {
+  display:flex; justify-content:space-between;
+  font-size:15px; font-weight:700;
+  padding-top:10px; margin-top:6px;
+  border-top:0.5px solid var(--color-border-tertiary,#e5e3dd);
+  color:var(--col-text);
+}
+
+/* ── Payment success screen ────────────────────────────────────────── */
+.payment-success {
+  text-align:center; padding:32px 20px;
+  display:flex; flex-direction:column; align-items:center; gap:12px;
+}
+.payment-success__icon { font-size:52px; }
+.payment-success__title { font-size:18px; font-weight:700; color:var(--col-text); }
+.payment-success__sub   { font-size:13px; color:var(--col-muted); max-width:320px; }
+.payment-success__ref   {
+  font-size:12px; font-family:monospace;
+  background:var(--col-surface,#f4f3ef);
+  padding:6px 14px; border-radius:20px;
+  color:var(--col-muted);
+}

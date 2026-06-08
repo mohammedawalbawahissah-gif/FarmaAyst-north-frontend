@@ -6,10 +6,15 @@ interface CardProps {
   children: ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  onClick?: () => void;
 }
-export function Card({ children, className = '', style }: CardProps) {
+export function Card({ children, className = '', style, onClick }: CardProps) {
   return (
-    <div className={`card ${className}`} style={style}>
+    <div
+      className={`card ${className}`}
+      style={{ ...style, cursor: onClick ? 'pointer' : undefined }}
+      onClick={onClick}
+    >
       {children}
     </div>
   );

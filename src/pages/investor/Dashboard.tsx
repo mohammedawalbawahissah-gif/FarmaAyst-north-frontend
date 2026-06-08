@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, TrendingUp, FileCheck, BarChart3 } from 'lucide-react';
+import { Users, TrendingUp, FileCheck, BarChart3, X } from 'lucide-react';
 import { toArray } from '../../lib/api';
 import { PageHeader, StatCard, Card, Button, SectionTitle, Badge } from '../../components/ui';
 import { useAuth } from '../../lib/auth-context';
 import { useAsync } from '../../lib/hooks/useAsync';
 import { creditService } from '../../lib/services/credit';
 import { farmsService } from '../../lib/services/farms';
+import { adminService } from '../../lib/services/admin';
+import { displayName, userId } from '../../types';
 import '../farmer/farmer.css';
 import './investor.css';
 
@@ -14,12 +17,20 @@ export default function InvestorDashboard() {
   const navigate = useNavigate();
   const agreements = useAsync(() => creditService.listAgreements(), []);
   const farms      = useAsync(() => farmsService.list(), []);
+  const profiles   = useAsync(() => adminService.listFarmerProfiles(), []);
+  const [selectedFarm, setSelectedFarm] = useState<any>(null);
 
   const ags           = toArray(agreements.data);
   const allFarms      = toArray(farms.data);
+  const allProfiles   = toArray(profiles.data);
   const active        = ags.filter(a => a.status === 'active');
   const totalAmt      = ags.reduce((s, a) => s + parseFloat(a.amount), 0);
   const uniqueFarmers = new Set(ags.map(a => a.farmer)).size;
+
+  // Build map: ownerId → farmerProfile
+  const profileMap = Object.fromEntries(
+    allProfiles.map((p: any) => [userId(p.user), p])
+  );
 
   return (
     <div>
@@ -57,7 +68,7 @@ export default function InvestorDashboard() {
                       <span className="farmer-match-card__meta">{f.district}, {f.region} · {f.flock_size.toLocaleString()} birds · {f.flock_type}</span>
                     </div>
                     <div className="farmer-match-card__ask"><strong>{f.flock_type}</strong><span>flock</span></div>
-                    <Button size="sm" variant="secondary" onClick={() => navigate(`/investor/farmers/${f.id}`)}>View Profile</Button>
+                    <Button size="sm" variant="secondary" onClick={() => setSelectedFarm({ farm: f, profile: profileMap[userId(f.owner as any)] })}>View Profile</Button>
                   </Card>
                 ))}
               </div>
@@ -90,6 +101,65 @@ export default function InvestorDashboard() {
           </Card>
         </div>
       </div>
+
+      {/* ── Farmer Profile Modal ───────────────────────────────────────────── */}
+      {selectedFarm && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
+          <div style={{ background: '#fff', borderRadius: 12, width: '100%', maxWidth: 520, maxHeight: '88vh', overflowY: 'auto', padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--col-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, flexShrink: 0 }}>
+                  {selectedFarm.farm.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 17 }}>{selectedFarm.farm.name}</h3>
+                  <div style={{ fontSize: 12, color: 'var(--col-muted)', marginTop: 2 }}>{selectedFarm.farm.district}, {selectedFarm.farm.region}</div>
+                </div>
+              </div>
+              <button onClick={() => setSelectedFarm(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--col-muted)', padding: 4 }}><X size={20} /></button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ background: '#f8f6f2', borderRadius: 8, padding: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--col-muted)', marginBottom: 10 }}>Farm Details</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 13 }}>
+                  <div><span style={{ color: 'var(--col-muted)' }}>Flock Type</span><br /><strong style={{ textTransform: 'capitalize' }}>{selectedFarm.farm.flock_type.replace(/_/g, ' ')}</strong></div>
+                  <div><span style={{ color: 'var(--col-muted)' }}>Flock Size</span><br /><strong>{selectedFarm.farm.flock_size?.toLocaleString()}</strong></div>
+                  <div><span style={{ color: 'var(--col-muted)' }}>Farm Size</span><br /><strong>{selectedFarm.farm.farm_size_acres ? `${selectedFarm.farm.farm_size_acres} acres` : '—'}</strong></div>
+                  <div><span style={{ color: 'var(--col-muted)' }}>Status</span><br /><Badge variant={selectedFarm.farm.is_active ? 'success' : 'neutral'}>{selectedFarm.farm.is_active ? 'Active' : 'Inactive'}</Badge></div>
+                  <div><span style={{ color: 'var(--col-muted)' }}>Water Source</span><br /><strong>{selectedFarm.farm.has_water_source ? '✓ Yes' : '✗ No'}</strong></div>
+                  <div><span style={{ color: 'var(--col-muted)' }}>Electricity</span><br /><strong>{selectedFarm.farm.has_electricity ? '✓ Yes' : '✗ No'}</strong></div>
+                </div>
+              </div>
+
+              {selectedFarm.profile && (
+                <div style={{ background: '#f8f6f2', borderRadius: 8, padding: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--col-muted)', marginBottom: 10 }}>Farmer Profile</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 13 }}>
+                    <div><span style={{ color: 'var(--col-muted)' }}>Name</span><br /><strong>{displayName(selectedFarm.profile.user) || '—'}</strong></div>
+                    <div><span style={{ color: 'var(--col-muted)' }}>Experience</span><br /><strong>{selectedFarm.profile.years_of_farming ?? 0} years</strong></div>
+                    <div>
+                      <span style={{ color: 'var(--col-muted)' }}>Credit Score</span><br />
+                      <strong style={{ fontSize: 20, color: 'var(--col-primary)' }}>{parseFloat(selectedFarm.profile.credit_score ?? 0).toFixed(2)}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--col-muted)' }}>Verification</span><br />
+                      <Badge variant={selectedFarm.profile.verification_status === 'verified' ? 'success' : 'warning'}>
+                        {selectedFarm.profile.verification_status ?? 'pending'}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+              <Button variant="secondary" onClick={() => setSelectedFarm(null)}>Close</Button>
+              <Button onClick={() => { setSelectedFarm(null); navigate('/investor/farmers'); }}>View All Farmers</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -9,6 +9,7 @@ import './admin.css';
 
 const ROLE_BADGE: Record<string,'success'|'info'|'warning'|'neutral'> = {
   farmer:'success', investor:'info', admin:'warning', consumer:'neutral',
+  monitoring_officer:'info', vet:'info', input_dealer:'info',
 };
 
 export default function AdminUsers() {
@@ -88,7 +89,7 @@ export default function AdminUsers() {
         </div>
         <select value={roleFilter} onChange={e=>setRole(e.target.value)} style={{minWidth:140}}>
           <option value="">All roles</option>
-          {['farmer','investor','consumer','admin'].map(r=><option key={r} value={r}>{r}</option>)}
+          {['farmer','investor','consumer','admin','monitoring_officer','vet','input_dealer'].map(r=><option key={r} value={r}>{r.replace('_',' ')}</option>)}
         </select>
       </div>
 

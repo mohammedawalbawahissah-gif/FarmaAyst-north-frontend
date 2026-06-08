@@ -31,4 +31,25 @@ export const adminService = {
       return api.get<Paginated<User> | User[]>('/users/', { params: { role: 'investor' } }).then(r => r.data);
     }
   },
+
+  // Monitoring officers
+  listMonitoringOfficers: () =>
+    api.get<Paginated<User> | User[]>('/users/', { params: { role: 'monitoring_officer' } }).then(r => r.data),
+
+  assignOfficerToFarm: (farmId: string, officerId: string) => {
+    if (!officerId) {
+      // Unassign — send null
+      return api.post(`/farms/${farmId}/assign_officer/`, { officer_id: null }).then(r => r.data);
+    }
+    return api.post(`/farms/${farmId}/assign_officer/`, { officer_id: officerId }).then(r => r.data);
+  },
+
+  requestAuditReport: (farmId: string, officerId: string) =>
+    api.post(`/farms/${farmId}/request_report/`, { officer_id: officerId }).then(r => r.data),
+
+  // Vet & Input Dealer management
+  listVets: (params?: Record<string, string>) =>
+    api.get('/users/', { params: { ...params, role: 'vet' } }).then(r => r.data),
+  listInputDealers: (params?: Record<string, string>) =>
+    api.get('/users/', { params: { ...params, role: 'input_dealer' } }).then(r => r.data),
 };
